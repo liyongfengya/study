@@ -3,10 +3,10 @@
         <el-container class="home_container">
             <el-header>
                 <el-row>
-                    <el-col :span="4">
-                        <p class="systerm_name">LYF学习后台管理系统</p>
+                    <el-col :span="6">
+                        <div class="systerm_name">LYF学习后台管理系统</div>
                     </el-col>
-                    <el-col :offset="12" :span="8" style="min-width: 150px;">
+                    <el-col :offset="12" :span="6" style="min-width: 150px;">
                         <el-dropdown style="float: right;margin: 20px 10px;">
                             <span class="systerm_right" style="color: white;cursor: pointer;">
                                 系统管理&nbsp;
@@ -110,14 +110,18 @@ const saveActiveNav = (path: string)=>{
     background: #f2f3f5;
 }
 .el-header {
-    background: #2661ef;
+    position: relative;
+    background: #b2c4ef;
     padding: 0 10px;
     overflow: hidden;
 }
 
 .systerm_name {
+    position: absolute;
     color: #fff;
-    font-size: 18px;
+    font-size: 1.6vw;
+    top: 50%;
+    transform: translate(0, -50%);
 }
 
 .el-aside {

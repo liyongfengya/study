@@ -6,6 +6,7 @@
 
 <script setup lang='ts'>
 import { ref } from 'vue';
+import { Optimize } from "../../../datas/Optimize";
 
 /**
  * 需求：实现自由拖拽标签
@@ -20,23 +21,28 @@ const drapBox = ()=>{
   const maxY: number = container.value!.offsetHeight - box.value!.offsetHeight;
   const moveHandle = (moveEvent: MouseEvent)=>{
     if(!mouseDown){ return; }
-    const x: number = moveEvent.offsetX;
-    const y: number = moveEvent.offsetY;
-    if(x > 0 && x < maxX){
-      box.value!.style.left = `${x}px`
+    moveEvent.stopPropagation();
+    console.log(box.value!.getBoundingClientRect());
+    const { offsetX, offsetY } = moveEvent;
+    if(offsetX > 0 && offsetX < maxX){
+      box.value!.style.left = `${offsetX}px`
     }
-    if(y > 0 && y < maxY){
-      box.value!.style.top = `${y}px`
+    if(offsetY > 0 && offsetY < maxY){
+      box.value!.style.top = `${offsetY}px`
     }
   }
+  const deboundsMove = Optimize.thorrtle(moveHandle, 30);
   const uphandle = ()=>{
     mouseDown = false;
-    container.value!.removeEventListener("mousemove", moveHandle);
+    container.value!.removeEventListener("mousemove", deboundsMove);
     container.value!.removeEventListener("mouseup", uphandle);
+    box.value!.style.pointerEvents= "auto";
   }
   box.value!.style.cursor = "grabbing";
-  container.value!.addEventListener("mousemove", moveHandle);
+  container.value!.addEventListener("mousemove", deboundsMove);
   container.value!.addEventListener("mouseup", uphandle);
+  // 穿透
+  box.value!.style.pointerEvents= "none";
 }
 
 </script>

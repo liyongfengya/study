@@ -43,7 +43,7 @@
                         </el-menu-item>
                         <el-menu-item index="/layout" @click="saveActiveNav('/layout')">
                             <el-icon>
-                                <House />
+                                <CoffeeCup />
                             </el-icon>
                             <span>自定义组件</span>
                         </el-menu-item>
@@ -74,7 +74,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ArrowDown, House, Setting, User, Expand, Fold, Stamp } from '@element-plus/icons-vue';
+import { ArrowDown, House, Setting, User, Expand, Fold, CoffeeCup } from '@element-plus/icons-vue';
 import { onBeforeMount, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import avatarImg from "../../assets/img/avatar.jpg";

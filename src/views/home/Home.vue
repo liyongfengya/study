@@ -29,7 +29,7 @@
                 <!--菜单-->
                 <el-aside>
                     <div class="toggle_button" @click="isCollapse = !isCollapse">
-                        <el-icon :size="20">
+                        <el-icon :size="15" color="#b2c4ef">
                             <Expand v-if="isCollapse" />
                             <Fold v-else />
                         </el-icon>
@@ -145,10 +145,10 @@ const saveActiveNav = (path: string)=>{
 }
 
 .toggle_button {
-    background-color: #d9e0e7;
+    height: 20px;
+    background-color: rgb(244, 239, 239);
     font-size: 18px;
-    line-height: 24px;
-    color: #fff;
+    line-height: 20px;
     text-align: center;
     letter-spacing: 0.2em;
     cursor: pointer;

@@ -100,10 +100,6 @@ export class CameraControl extends OrbitControls{
 
         camera.updateProjectionMatrix();
         this.update();
-
-        // this.viewCube.onResize();
-
-        // Fdm.xdb.redraw();
     }
 
     private onMouseDown(event: MouseEvent): void {
@@ -131,7 +127,6 @@ export class CameraControl extends OrbitControls{
     private onMouseUp(event: MouseEvent): void {
         if (event.button === 1) { // 鼠标滚轮
             this.bIsWheelDown = false;
-            // Fdm.DefaultHandler.getInstance().Dimention.forEach(item=>{item.setVisible3(true);});
             // this.planeHelperent?.hidePlaneHelper();
         }
     }
@@ -140,23 +135,22 @@ export class CameraControl extends OrbitControls{
         if (this.bIsWheelDown) {
             const camera: THREE.OrthographicCamera = this.object as THREE.OrthographicCamera;
             if (this.bIsCtrlKey) {
-                // Fdm.DefaultHandler.getInstance().Dimention.forEach(item=>{item.setVisible3(false);});
                 // 计算在屏幕上的移动量
                 const screenPt: THREE.Vector3           = this.getMousePtInScreen(event.clientX, event.clientY);
                 const vecMoveOnScreen: THREE.Vector3    = screenPt.clone().sub(this.wheelDownPtInScreen!);
 
                 // 计算按下时与水平面的交点，作为旋转的中心点
                 let rayIntersectPt: THREE.Vector3 = new THREE.Vector3();
-                if(this.planeHelperent?.rlt){
+                /* if(this.planeHelperent?.rlt){
                     rayIntersectPt = this.planeHelperent?.rlt.point.clone();
-                } else {
+                } else */ {
                     const testRay: THREE.Ray            = new THREE.Ray(this.wheelDownPtInWord!.clone(), this.wheelDownCameraDir!.clone());
                     const horZ0Plan: THREE.Plane        = new THREE.Plane(new THREE.Vector3(0, 0 , 1), 0);
                     testRay.intersectPlane(horZ0Plan, rayIntersectPt);
                     let tmprlt: any = {rlt: {point: rayIntersectPt.clone()}};
-                    Object.assign(this.planeHelperent!,tmprlt);
+                    // Object.assign(this.planeHelperent!,tmprlt);
                 }
-                this.planeHelperent?.updataPlaneHelper();
+                // this.planeHelperent?.updataPlaneHelper();
 
                 // 计算上下翻转的轴
                 const verRotateAxisPt1: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
@@ -192,7 +186,7 @@ export class CameraControl extends OrbitControls{
                 camera.updateProjectionMatrix();
                 this.update();
         
-                Fdm.xdb.redraw();
+                // Fdm.xdb.redraw();
             } else {
                 const screenPtInWorld: THREE.Vector3 = this.getMousePtInScreen(event.clientX, event.clientY);
                 screenPtInWorld.applyMatrix4(this.wheelDownProjectionMatrixInverse!).applyMatrix4(this.wheelDownMatrixWorld!);
@@ -212,11 +206,8 @@ export class CameraControl extends OrbitControls{
 
                 camera.updateProjectionMatrix();
                 this.update();
-        
-                Fdm.xdb.redraw();
             }
         }
-        this.onCameraChange();
     }
 
     private onMouseWheel(event: WheelEvent): void {
@@ -252,9 +243,8 @@ export class CameraControl extends OrbitControls{
 
         camera.updateProjectionMatrix();
         this.update();
-        this.onCameraChange();
 
-        Fdm.xdb.redraw();
+        // Fdm.xdb.redraw();
     }
 
     private getMousePtInScreen(clientX: number, clientY: number): THREE.Vector3 {
@@ -262,9 +252,5 @@ export class CameraControl extends OrbitControls{
         const dScreenY: number = -(clientY / this.domElement.offsetHeight) * 2 + 1;
         const screenPt: THREE.Vector3 = new THREE.Vector3(dScreenX, dScreenY, -1);
         return screenPt;
-    }
-
-    public onCameraChange():void{
-        Fdm.DefaultHandler.getInstance().Dimention.forEach(item=>{item.updateDimension();}); 
     }
 }

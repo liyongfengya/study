@@ -1,7 +1,11 @@
 import { Color, Scene, PerspectiveCamera, WebGLRenderer, BoxGeometry, MeshBasicMaterial, Mesh, PlaneGeometry, DoubleSide, Vector3,
-     ArrowHelper, Matrix4 } from "three";
+     ArrowHelper, Matrix4, Quaternion, Ray, Plane } from "three";
 
 export class ThreeLearn{
+    // 控制参数
+    private cameraMoveScale: number = 0.1;
+
+
     // 基本元素
     private scene: Scene | null = null;
     private camera: PerspectiveCamera | null = null;
@@ -10,8 +14,12 @@ export class ThreeLearn{
     // 功能元素
     private wheelDownPtInScreen: Vector3 = new Vector3();
     private wheelDownPtInWord: Vector3 = new Vector3();
+    private bIsMouseDown: boolean = false;
     private bIsWheelDown: boolean = false;
-    private bIsCtrlKey: boolean = false;
+    private wheelDownProjectionMatrixInverse: Matrix4 | null = null;  // 滚轮按下时的逆投影矩阵
+    private wheelDownMatrixWorld: Matrix4 | null = null;              // 滚轮按下时的相机矩阵
+    private wheelDownCameraPos: Vector3 | null = null;                // 滚轮按下时相机的位置
+    private wheelDownCameraDir: Vector3 | null = null;                // 滚轮接下时相机的方向
 
     // 绑定函数，需要改变this指向(事件中this指向触发元素)
     private mouseDownFunc: any = null;
@@ -33,8 +41,9 @@ export class ThreeLearn{
         // 画布、透视相机
         this.scene = new Scene();
         this.scene.background = new Color("#DEDEDE");
-        this.camera = new PerspectiveCamera(75, el.clientWidth / el.clientHeight, 0.1, 3000);
+        this.camera = new PerspectiveCamera(75, el.clientWidth / el.clientHeight, 500, 3000);
         this.camera.position.set(1000,1000,1000);
+        this.camera.up.set(0, 0, 1);
         this.camera.lookAt(new Vector3(0,0,0));
 
         // 渲染器
@@ -53,15 +62,13 @@ export class ThreeLearn{
 
         // 地面
         const planeGeo = new PlaneGeometry(1500,1500);
-        const matrix: Matrix4 = new Matrix4().makeRotationX(Math.PI / 2);
-        planeGeo.applyMatrix4(matrix);
         const planMat = new MeshBasicMaterial({
              color: 0xffff00,
              side: DoubleSide,
              transparent: true,
              opacity: 0.5,
             });
-        const plane = new Mesh(planeGeo, planMat);
+        const plane: Mesh = new Mesh(planeGeo, planMat);
         this.scene.add(plane);
 
         const geometry = new BoxGeometry(100, 100, 100);
@@ -72,17 +79,12 @@ export class ThreeLearn{
         const cube = new Mesh(geometry, material);
         this.scene.add(cube);
 
-        const scene = this.scene;
-        const camera = this.camera;
-        function animate() {
+        const animate = ()=>{
             requestAnimationFrame(animate);
-
             cube.rotation.x += 0.01;
             cube.rotation.y += 0.01;
-
-            renderer.render(scene, camera);
+            renderer.render(this.scene!, this.camera!);
         }
-
         animate();
     }
 
@@ -112,82 +114,34 @@ export class ThreeLearn{
 
     private mouseDown(event: MouseEvent){
         if(!this.camera){ return; }
-        if (event.button === 1) { // 鼠标滚轮
-            this.bIsWheelDown = true;
-            this.bIsCtrlKey = event.ctrlKey;
-
+        if (event.button === 1 || event.button === 0) { // 鼠标滚轮/左键
+            this.bIsMouseDown = true;
+            this.bIsWheelDown = event.button === 1;
+            //
             this.wheelDownPtInScreen = this.getMousePtInScreen(event.clientX, event.clientY);
             this.wheelDownPtInWord = this.wheelDownPtInScreen.clone();
             this.wheelDownPtInWord.unproject(this.camera);
+            this.wheelDownProjectionMatrixInverse = this.camera.projectionMatrixInverse.clone();
+            this.wheelDownMatrixWorld = this.camera.matrixWorld.clone();
+            this.wheelDownCameraPos = this.camera.position.clone();
+            this.wheelDownCameraDir = new Vector3();
+            this.camera.getWorldDirection(this.wheelDownCameraDir);
         }
     }
     private mouseUp(event: MouseEvent){
+        this.bIsMouseDown = false;
         if (event.button === 1) { // 鼠标滚轮
             this.bIsWheelDown = false;
         }
     }
     private mouseMove(event: MouseEvent){
         if(!this.camera){ return; }
-        if (this.bIsWheelDown) {
-            // if (this.bIsCtrlKey) {
-            //     // 计算在屏幕上的移动量
-            //     const screenPt: Vector3           = this.getMousePtInScreen(event.clientX, event.clientY);
-            //     const vecMoveOnScreen: Vector3    = screenPt.clone().sub(this.wheelDownPtInScreen!);
-
-                // 计算按下时与水平面的交点，作为旋转的中心点
-            //     let rayIntersectPt: Vector3 = new Vector3();
-            //     if(this.planeHelperent?.rlt){
-            //         rayIntersectPt = this.planeHelperent?.rlt.point.clone();
-            //     } else {
-            //         const testRay: THREE.Ray            = new THREE.Ray(this.wheelDownPtInWord!.clone(), this.wheelDownCameraDir!.clone());
-            //         const horZ0Plan: THREE.Plane        = new THREE.Plane(new THREE.Vector3(0, 0 , 1), 0);
-            //         testRay.intersectPlane(horZ0Plan, rayIntersectPt);
-            //         let tmprlt: any = {rlt: {point: rayIntersectPt.clone()}};
-            //         Object.assign(this.planeHelperent!,tmprlt);
-            //     }
-            //     this.planeHelperent?.updataPlaneHelper();
-
-            //     // 计算上下翻转的轴
-            //     const verRotateAxisPt1: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
-            //     const verRotateAxisPt2: THREE.Vector3 = new THREE.Vector3(1, 0, 0);
-            //     verRotateAxisPt1.applyMatrix4(this.wheelDownMatrixWorld!);
-            //     verRotateAxisPt2.applyMatrix4(this.wheelDownMatrixWorld!);
-            //     const verRotateAxis: THREE.Vector3 = verRotateAxisPt2.clone().sub(verRotateAxisPt1).setZ(0).normalize();
-
-            //     // 计算旋转量
-            //     const verRotateQuaternion: THREE.Quaternion = new THREE.Quaternion();
-            //     const horRotateQuaternion: THREE.Quaternion = new THREE.Quaternion();
-            //     verRotateQuaternion.setFromAxisAngle(verRotateAxis, Math.PI * vecMoveOnScreen.y);
-            //     horRotateQuaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI * (-vecMoveOnScreen.x));
-
-            //     // 旋转相机位置和视角
-            //     const cameraNewPos: THREE.Vector3 = this.wheelDownCameraPos!.clone();
-            //     const cameraNewDir: THREE.Vector3 = this.wheelDownCameraDir!.clone();
-
-            //     cameraNewPos.sub(rayIntersectPt);
-            //     cameraNewPos.applyQuaternion(verRotateQuaternion);
-            //     cameraNewPos.applyQuaternion(horRotateQuaternion);
-            //     cameraNewPos.add(rayIntersectPt);
-
-            //     cameraNewDir.applyQuaternion(verRotateQuaternion);
-            //     cameraNewDir.applyQuaternion(horRotateQuaternion);
-
-            //     const newLookAt: THREE.Vector3 = cameraNewPos.clone();
-            //     newLookAt.add(cameraNewDir);
-
-            //     camera.position.copy(cameraNewPos);
-            //     this.target = newLookAt;
-
-            //     camera.updateProjectionMatrix();
-            //     this.update();
-        
-            //     Fdm.xdb.redraw();
-            // } else {
+        if (this.bIsMouseDown) {
+            if (this.bIsWheelDown) {
                 const screenPtInWorld: Vector3 = this.getMousePtInScreen(event.clientX, event.clientY);
-                // screenPtInWorld.applyMatrix4(this.wheelDownProjectionMatrixInverse!).applyMatrix4(this.wheelDownMatrixWorld!);
-                screenPtInWorld.unproject(this.camera);
+                screenPtInWorld.applyMatrix4(this.wheelDownProjectionMatrixInverse!).applyMatrix4(this.wheelDownMatrixWorld!);
 
-                const vecMove: Vector3 = screenPtInWorld.clone().sub(this.wheelDownPtInWord!);
+                const vecMove: Vector3 = screenPtInWorld.clone().sub(this.wheelDownPtInWord!).multiplyScalar(this.cameraMoveScale);
                 const ptNewPosition: Vector3 = this.camera.position.clone();
                 ptNewPosition.add(vecMove);
 
@@ -201,8 +155,47 @@ export class ThreeLearn{
                 this.camera.lookAt(newLookAt);
 
                 this.camera.updateProjectionMatrix();
-        
-            // }
+            } else {
+                // 计算在屏幕上的移动量
+                const screenPt: Vector3           = this.getMousePtInScreen(event.clientX, event.clientY);
+                const vecMoveOnScreen: Vector3    = screenPt.clone().sub(this.wheelDownPtInScreen!);
+
+                // 计算按下时与水平面的交点，作为旋转的中心点
+                const rayIntersectPt: Vector3 = this.getRayHitOnXOY();
+
+                // 计算上下翻转的轴
+                const verRotateAxisPt1: Vector3 = new Vector3(0, 0, 0);
+                const verRotateAxisPt2: Vector3 = new Vector3(1, 0, 0);
+                verRotateAxisPt1.applyMatrix4(this.wheelDownMatrixWorld!);
+                verRotateAxisPt2.applyMatrix4(this.wheelDownMatrixWorld!);
+                const verRotateAxis: Vector3 = verRotateAxisPt2.clone().sub(verRotateAxisPt1).setZ(0).normalize();
+
+                // 计算旋转量
+                const verRotateQuaternion: Quaternion = new Quaternion();
+                const horRotateQuaternion: Quaternion = new Quaternion();
+                verRotateQuaternion.setFromAxisAngle(verRotateAxis, Math.PI * vecMoveOnScreen.y);
+                horRotateQuaternion.setFromAxisAngle(new Vector3(0, 0, 1), Math.PI * (-vecMoveOnScreen.x));
+
+                // 旋转相机位置和视角
+                const cameraNewPos: Vector3 = this.wheelDownCameraPos!.clone();
+                const cameraNewDir: Vector3 = this.wheelDownCameraDir!.clone();
+
+                cameraNewPos.sub(rayIntersectPt);
+                cameraNewPos.applyQuaternion(verRotateQuaternion);
+                cameraNewPos.applyQuaternion(horRotateQuaternion);
+                cameraNewPos.add(rayIntersectPt);
+
+                cameraNewDir.applyQuaternion(verRotateQuaternion);
+                cameraNewDir.applyQuaternion(horRotateQuaternion);
+
+                const newLookAt: Vector3 = cameraNewPos.clone();
+                newLookAt.add(cameraNewDir);
+
+                this.camera.position.copy(cameraNewPos);
+                this.camera.lookAt(newLookAt);
+
+                this.camera.updateProjectionMatrix();
+            }
         }
     }
     private mouseWheel(event: MouseEvent){}
@@ -216,5 +209,12 @@ export class ThreeLearn{
         const screenPt: Vector3 = new Vector3(dScreenX, dScreenY, -1);
         return screenPt;
     }
-
+    // 获取旋转时候的基点(基于世界坐标系xoy平面)
+    private getRayHitOnXOY(){
+        const rayHitPt: Vector3 = new Vector3();
+        const testRay: Ray            = new Ray(this.wheelDownPtInWord!.clone(), this.wheelDownCameraDir!.clone());
+        const horZ0Plan: Plane        = new Plane(new Vector3(0, 0 , 1), 0);
+        testRay.intersectPlane(horZ0Plan, rayHitPt);
+        return rayHitPt;
+    }
 }

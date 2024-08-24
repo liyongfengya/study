@@ -138,6 +138,7 @@ const saveActiveNav = (path: string)=>{
     color: #cccccc;
     text-align: center;
     line-height: 60px;
+    background-color: #f9f9f9;
 }
 
 .el-footer:hover {

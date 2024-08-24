@@ -1,9 +1,9 @@
 import { Color, Scene, PerspectiveCamera, WebGLRenderer, BoxGeometry, MeshBasicMaterial, Mesh, PlaneGeometry, DoubleSide, Vector3,
-     ArrowHelper, Matrix4, Quaternion, Ray, Plane } from "three";
+     ArrowHelper, Matrix4, Quaternion, Ray, Plane, Texture, TextureLoader, RepeatWrapping, GridHelper } from "three";
 
 export class ThreeLearn{
     // 控制参数
-    private cameraMoveScale: number = 0.1;
+    private cameraMoveScale: number = 0.15;
 
 
     // 基本元素
@@ -40,9 +40,9 @@ export class ThreeLearn{
 
         // 画布、透视相机
         this.scene = new Scene();
-        this.scene.background = new Color("#DEDEDE");
-        this.camera = new PerspectiveCamera(75, el.clientWidth / el.clientHeight, 500, 3000);
-        this.camera.position.set(1000,1000,1000);
+        this.scene.background = new Color("#F5F5F5");
+        this.camera = new PerspectiveCamera(75, el.clientWidth / el.clientHeight, 100, 5000);
+        this.camera.position.set(500,500,1000);
         this.camera.up.set(0, 0, 1);
         this.camera.lookAt(new Vector3(0,0,0));
 
@@ -54,23 +54,31 @@ export class ThreeLearn{
 
         // 坐标轴
         const orign = new Vector3();
-        const length = 1000;
-        const arrowX = new ArrowHelper( new Vector3(1,0,0), orign, length, "#FF0000", 100, 35 );
-        const arrowY = new ArrowHelper( new Vector3(0,1,0), orign, length, "#00FF00", 100, 35 );
-        const arrowZ = new ArrowHelper( new Vector3(0,0,1), orign, length, "#0000FF", 100, 35 );
+        const length = 500;
+        const arrowX = new ArrowHelper( new Vector3(1,0,0), orign, length, "#FF0000", 80, 20 );
+        const arrowY = new ArrowHelper( new Vector3(0,1,0), orign, length, "#00FF00", 80, 20 );
+        const arrowZ = new ArrowHelper( new Vector3(0,0,1), orign, length, "#0000FF", 80, 20 );
         this.scene.add( arrowX, arrowY, arrowZ );
 
         // 地面
-        const planeGeo = new PlaneGeometry(1500,1500);
+        const planeGeo = new PlaneGeometry(15000,15000);
+        /* const texture: Texture = new TextureLoader().load("src/assets/img/ground.jpg");
+        texture.wrapS = RepeatWrapping;
+        texture.wrapT = RepeatWrapping;
+        texture.repeat.set(10,10); */
         const planMat = new MeshBasicMaterial({
-             color: 0xffff00,
+             color: "#CDC3A7",
              side: DoubleSide,
              transparent: true,
              opacity: 0.5,
             });
         const plane: Mesh = new Mesh(planeGeo, planMat);
-        this.scene.add(plane);
+        const grid = new GridHelper( 15000, 40, 0xFFFFFF, 0xFFFFFF );
+        grid.material.transparent = true;
+        grid.rotation.x = - Math.PI / 2;
+        this.scene.add(plane, grid);
 
+        // 物体
         const geometry = new BoxGeometry(100, 100, 100);
         const material = new MeshBasicMaterial({
             color: 0x00ff00,
@@ -115,6 +123,9 @@ export class ThreeLearn{
     private mouseDown(event: MouseEvent){
         if(!this.camera){ return; }
         if (event.button === 1 || event.button === 0) { // 鼠标滚轮/左键
+            // 鼠标
+            this.domElement!.style.cursor = "move";
+            //
             this.bIsMouseDown = true;
             this.bIsWheelDown = event.button === 1;
             //
@@ -130,17 +141,19 @@ export class ThreeLearn{
     }
     private mouseUp(event: MouseEvent){
         this.bIsMouseDown = false;
+        // 鼠标
+        this.domElement!.style.cursor = "default";
         if (event.button === 1) { // 鼠标滚轮
             this.bIsWheelDown = false;
         }
     }
+    // 左键旋转，滚轮挪动
     private mouseMove(event: MouseEvent){
         if(!this.camera){ return; }
         if (this.bIsMouseDown) {
             if (this.bIsWheelDown) {
                 const screenPtInWorld: Vector3 = this.getMousePtInScreen(event.clientX, event.clientY);
                 screenPtInWorld.applyMatrix4(this.wheelDownProjectionMatrixInverse!).applyMatrix4(this.wheelDownMatrixWorld!);
-
                 const vecMove: Vector3 = screenPtInWorld.clone().sub(this.wheelDownPtInWord!).multiplyScalar(this.cameraMoveScale);
                 const ptNewPosition: Vector3 = this.camera.position.clone();
                 ptNewPosition.add(vecMove);
@@ -198,7 +211,30 @@ export class ThreeLearn{
             }
         }
     }
-    private mouseWheel(event: MouseEvent){}
+    // 
+    private mouseWheel(event: MouseEvent){
+        event.preventDefault();
+        event.stopPropagation();
+
+        if(!this.camera){  return; }
+        if(!this.bIsWheelDown){
+            //
+            const delta: number = (event as any).wheelDelta ?? 100;
+            //
+            // const screenHitPt: Vector3 = this.getMousePtInScreen(event.clientX, event.clientY);
+            // screenHitPt.unproject(this.camera);
+            const cameraPos: Vector3 = this.camera.position.clone();
+            // const wheelDir: Vector3 = new Vector3().subVectors(screenHitPt, cameraPos).normalize();
+            const wheelDir: Vector3 = new Vector3();
+            this.camera.getWorldDirection(wheelDir);
+            // 
+            const newCameraPos: Vector3 = cameraPos.addScaledVector(wheelDir, delta);
+            this.camera.position.copy(newCameraPos);
+            //
+
+            this.camera.updateProjectionMatrix();
+        }
+    }
     private resize(){}
 
 

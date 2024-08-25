@@ -1,5 +1,6 @@
 import { Color, Scene, PerspectiveCamera, WebGLRenderer, BoxGeometry, MeshBasicMaterial, Mesh, PlaneGeometry, DoubleSide, Vector3,
      ArrowHelper, Matrix4, Quaternion, Ray, Plane, Texture, TextureLoader, RepeatWrapping, GridHelper } from "three";
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class ThreeLearn{
     // 控制参数
@@ -42,7 +43,7 @@ export class ThreeLearn{
         this.scene = new Scene();
         this.scene.background = new Color("#F5F5F5");
         this.camera = new PerspectiveCamera(75, el.clientWidth / el.clientHeight, 100, 5000);
-        this.camera.position.set(500,500,1000);
+        this.camera.position.set(0,-1000,1000);
         this.camera.up.set(0, 0, 1);
         this.camera.lookAt(new Vector3(0,0,0));
 
@@ -75,22 +76,36 @@ export class ThreeLearn{
         const plane: Mesh = new Mesh(planeGeo, planMat);
         const grid = new GridHelper( 15000, 40, 0xFFFFFF, 0xFFFFFF );
         grid.material.transparent = true;
-        grid.rotation.x = - Math.PI / 2;
+        const gridMat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2)).premultiply(new Matrix4().makeRotationZ(Math.PI/4));
+        grid.applyMatrix4(gridMat);
         this.scene.add(plane, grid);
 
         // 物体
-        const geometry = new BoxGeometry(100, 100, 100);
+        /* const geometry = new BoxGeometry(100, 100, 100);
         const material = new MeshBasicMaterial({
             color: 0x00ff00,
             depthTest: false
         });
         const cube = new Mesh(geometry, material);
-        this.scene.add(cube);
+        this.scene.add(cube); */
+
+        // 机器人
+        const loader = new GLTFLoader();
+        loader.load( 'src/models/RobotExpressive.glb', ( gltf )=>{
+            const model = gltf.scene;
+            model.scale.set(150, 150, 150);
+            const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2))/* .premultiply(new Matrix4().makeRotationZ(Math.PI)) */;
+            model.applyMatrix4(mat);
+            this.scene!.add( model );
+            // createGUI( model, gltf.animations );
+        }, undefined, function ( e ) {
+            console.error( e );
+        });
 
         const animate = ()=>{
             requestAnimationFrame(animate);
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
+            /* cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01; */
             renderer.render(this.scene!, this.camera!);
         }
         animate();

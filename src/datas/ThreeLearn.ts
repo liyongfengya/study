@@ -1,5 +1,6 @@
 import { Color, Scene, PerspectiveCamera, WebGLRenderer, BoxGeometry, MeshBasicMaterial, Mesh, PlaneGeometry, DoubleSide, Vector3,
-     ArrowHelper, Matrix4, Quaternion, Ray, Plane, Texture, TextureLoader, RepeatWrapping, GridHelper } from "three";
+     ArrowHelper, Matrix4, Quaternion, Ray, Plane, Texture, TextureLoader, RepeatWrapping, GridHelper, HemisphereLight, DirectionalLight,
+     Group, AnimationClip, AnimationMixer, Clock} from "three";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class ThreeLearn{
@@ -29,6 +30,10 @@ export class ThreeLearn{
     private mouseWheelFunc: any = null;
     private resizeFunc: any = null;
 
+    // 动画
+    private mixer: AnimationMixer | null = null;
+    private clock: Clock | null = null;
+
     constructor(id: string){
         this.init(id);
         this.cameraControl();
@@ -43,9 +48,9 @@ export class ThreeLearn{
         this.scene = new Scene();
         this.scene.background = new Color("#F5F5F5");
         this.camera = new PerspectiveCamera(75, el.clientWidth / el.clientHeight, 100, 5000);
-        this.camera.position.set(0,-1000,1000);
+        this.camera.position.set(0,-1000,1000* Math.tan(Math.PI / 6));
         this.camera.up.set(0, 0, 1);
-        this.camera.lookAt(new Vector3(0,0,0));
+        this.camera.lookAt(new Vector3(0,2000,0));
 
         // 渲染器
         const renderer = new WebGLRenderer();
@@ -54,12 +59,12 @@ export class ThreeLearn{
         this.domElement = renderer.domElement;
 
         // 坐标轴
-        const orign = new Vector3();
+        /* const orign = new Vector3();
         const length = 500;
         const arrowX = new ArrowHelper( new Vector3(1,0,0), orign, length, "#FF0000", 80, 20 );
         const arrowY = new ArrowHelper( new Vector3(0,1,0), orign, length, "#00FF00", 80, 20 );
         const arrowZ = new ArrowHelper( new Vector3(0,0,1), orign, length, "#0000FF", 80, 20 );
-        this.scene.add( arrowX, arrowY, arrowZ );
+        this.scene.add( arrowX, arrowY, arrowZ ); */
 
         // 地面
         const planeGeo = new PlaneGeometry(15000,15000);
@@ -76,9 +81,18 @@ export class ThreeLearn{
         const plane: Mesh = new Mesh(planeGeo, planMat);
         const grid = new GridHelper( 15000, 40, 0xFFFFFF, 0xFFFFFF );
         grid.material.transparent = true;
-        const gridMat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2)).premultiply(new Matrix4().makeRotationZ(Math.PI/4));
+        const gridMat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2)).premultiply(new Matrix4().makeRotationZ(Math.PI/12));
         grid.applyMatrix4(gridMat);
         this.scene.add(plane, grid);
+
+        // 灯光
+        const hemiLight = new HemisphereLight( 0xffffff, 0x8d8d8d, 3 );
+        hemiLight.position.set( 0, 0, 500 );
+        this.scene.add( hemiLight );
+
+        const dirLight = new DirectionalLight( 0xffffff, 3 );
+        dirLight.position.set( 0, -500, 500 );
+        this.scene.add( dirLight );
 
         // 物体
         /* const geometry = new BoxGeometry(100, 100, 100);
@@ -94,10 +108,11 @@ export class ThreeLearn{
         loader.load( 'src/models/RobotExpressive.glb', ( gltf )=>{
             const model = gltf.scene;
             model.scale.set(150, 150, 150);
-            const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2))/* .premultiply(new Matrix4().makeRotationZ(Math.PI)) */;
+            const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2))/* .premultiply(new Matrix4().makeRotationZ(Math.PI/12)) */;
             model.applyMatrix4(mat);
             this.scene!.add( model );
             // createGUI( model, gltf.animations );
+            this.robotAnimation(model, gltf.animations);
         }, undefined, function ( e ) {
             console.error( e );
         });
@@ -106,6 +121,9 @@ export class ThreeLearn{
             requestAnimationFrame(animate);
             /* cube.rotation.x += 0.01;
             cube.rotation.y += 0.01; */
+            if(this.mixer && this.clock){
+                this.mixer.update(this.clock.getDelta());
+            }
             renderer.render(this.scene!, this.camera!);
         }
         animate();
@@ -267,5 +285,15 @@ export class ThreeLearn{
         const horZ0Plan: Plane        = new Plane(new Vector3(0, 0 , 1), 0);
         testRay.intersectPlane(horZ0Plan, rayHitPt);
         return rayHitPt;
+    }
+
+    // 动画
+    private robotAnimation( model: Group, animations: AnimationClip[]) {
+        const wave: AnimationClip | undefined = animations.find(el=> el.name === "Wave");
+        if(!wave){ return; }
+        this.mixer = new AnimationMixer(model);
+        const clipAtion = this.mixer.clipAction(wave);
+        clipAtion.play();
+        this.clock = new Clock();
     }
 }

@@ -1,7 +1,11 @@
 import { Color, Scene, PerspectiveCamera, WebGLRenderer, BoxGeometry, MeshBasicMaterial, Mesh, PlaneGeometry, DoubleSide, Vector3,
      ArrowHelper, Matrix4, Quaternion, Ray, Plane, Texture, TextureLoader, RepeatWrapping, GridHelper, HemisphereLight, DirectionalLight,
-     Group, AnimationClip, AnimationMixer, Clock} from "three";
+     Group, AnimationClip, AnimationMixer, AnimationAction, Clock,
+     Box3} from "three";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { Tween } from 'three/examples/jsm/libs/tween.module.js';
 
 export class ThreeLearn{
     // 控制参数
@@ -115,6 +119,33 @@ export class ThreeLearn{
             this.robotAnimation(model, gltf.animations);
         }, undefined, function ( e ) {
             console.error( e );
+        });
+
+        // 文字
+        const fontLoader = new FontLoader();
+        fontLoader.load( 'node_modules/three/examples/fonts/helvetiker_regular.typeface.json', ( font )=>{
+            const textgGeo = new TextGeometry( 'Welcome to my admin system !', {
+                font: font,
+                size: 80,
+                height: 5,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 10,
+                bevelSize: 8,
+                bevelSegments: 5
+            });
+            // 位置
+            textgGeo.computeBoundingBox();
+            const box: Box3 | null = textgGeo.boundingBox;
+            const length: number = box !== null ? Math.abs(box.max.x - box.min.x) : 100;
+            const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2)).premultiply(new Matrix4().makeTranslation(-length/2, 0, 800));
+            textgGeo.applyMatrix4(mat);
+            const textMaterial = new MeshBasicMaterial({
+                color: "green",
+                transparent: true
+            });
+            const mesh = new Mesh(textgGeo, textMaterial);
+            this.scene!.add(mesh);
         });
 
         const animate = ()=>{
@@ -292,8 +323,9 @@ export class ThreeLearn{
         const wave: AnimationClip | undefined = animations.find(el=> el.name === "Wave");
         if(!wave){ return; }
         this.mixer = new AnimationMixer(model);
-        const clipAtion = this.mixer.clipAction(wave);
+        const clipAtion: AnimationAction = this.mixer.clipAction(wave);
         clipAtion.play();
+        clipAtion.timeScale = 0.7;
         this.clock = new Clock();
     }
 }

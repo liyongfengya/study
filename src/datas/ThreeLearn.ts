@@ -5,7 +5,7 @@ import { Color, Scene, PerspectiveCamera, WebGLRenderer, BoxGeometry, MeshBasicM
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { Tween } from 'three/examples/jsm/libs/tween.module.js';
+import TWEEN from 'three/examples/jsm/libs/tween.module.js';
 
 export class ThreeLearn{
     // 控制参数
@@ -123,7 +123,7 @@ export class ThreeLearn{
 
         // 文字
         const fontLoader = new FontLoader();
-        fontLoader.load( 'node_modules/three/examples/fonts/helvetiker_regular.typeface.json', ( font )=>{
+        fontLoader.load( 'node_modules/three/examples/fonts/optimer_regular.typeface.json', ( font )=>{
             const textgGeo = new TextGeometry( 'Welcome to my admin system !', {
                 font: font,
                 size: 80,
@@ -146,6 +146,17 @@ export class ThreeLearn{
             });
             const mesh = new Mesh(textgGeo, textMaterial);
             this.scene!.add(mesh);
+
+            // 更新文字透明度的动画
+            /* const fadeIn = new TWEEN.Tween({value: 0})
+                .to({ value: 1 }, 2000)
+                .easing(TWEEN.Easing.Linear.None);
+
+            fadeIn.onUpdate(function (obj: any) {
+                mesh.material.opacity = obj.value;
+            });
+            // 计划动画
+            fadeIn.start(); */
         });
 
         const animate = ()=>{
@@ -155,6 +166,7 @@ export class ThreeLearn{
             if(this.mixer && this.clock){
                 this.mixer.update(this.clock.getDelta());
             }
+            // TWEEN.update();
             renderer.render(this.scene!, this.camera!);
         }
         animate();

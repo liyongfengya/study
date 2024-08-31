@@ -138,7 +138,7 @@ export class ThreeLearn{
             textgGeo.computeBoundingBox();
             const box: Box3 | null = textgGeo.boundingBox;
             const length: number = box !== null ? Math.abs(box.max.x - box.min.x) : 100;
-            const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2)).premultiply(new Matrix4().makeTranslation(-length/2, 0, 800));
+            const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2)).premultiply(new Matrix4().makeTranslation(-length/2, 0, 450));
             textgGeo.applyMatrix4(mat);
             const textMaterial = new MeshBasicMaterial({
                 color: "green",
@@ -148,15 +148,15 @@ export class ThreeLearn{
             this.scene!.add(mesh);
 
             // 更新文字透明度的动画
-            /* const fadeIn = new TWEEN.Tween({value: 0})
-                .to({ value: 1 }, 2000)
+            const fadeIn = new TWEEN.Tween({...mesh.position, scale: 0})
+                .to({ z:350, scale: 1 }, 2000)
                 .easing(TWEEN.Easing.Linear.None);
 
             fadeIn.onUpdate(function (obj: any) {
-                mesh.material.opacity = obj.value;
+                mesh.position.setZ(obj.z);
             });
             // 计划动画
-            fadeIn.start(); */
+            fadeIn.start();
         });
 
         const animate = ()=>{
@@ -166,7 +166,7 @@ export class ThreeLearn{
             if(this.mixer && this.clock){
                 this.mixer.update(this.clock.getDelta());
             }
-            // TWEEN.update();
+            TWEEN.update();
             renderer.render(this.scene!, this.camera!);
         }
         animate();

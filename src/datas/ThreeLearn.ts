@@ -5,7 +5,6 @@ import { Color, Scene, PerspectiveCamera, WebGLRenderer, BoxGeometry, MeshBasicM
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import TWEEN from 'three/examples/jsm/libs/tween.module.js';
 
 export class ThreeLearn{
     // 控制参数
@@ -37,6 +36,8 @@ export class ThreeLearn{
     // 动画
     private mixer: AnimationMixer | null = null;
     private clock: Clock | null = null;
+
+    private textMesh: Mesh | null = null;
 
     constructor(id: string){
         this.init(id);
@@ -126,37 +127,28 @@ export class ThreeLearn{
         fontLoader.load( 'node_modules/three/examples/fonts/optimer_regular.typeface.json', ( font )=>{
             const textgGeo = new TextGeometry( 'Welcome to my admin system !', {
                 font: font,
-                size: 80,
-                height: 5,
+                size: 10,
+                height: 1,
                 curveSegments: 12,
-                bevelEnabled: true,
+                /* bevelEnabled: true,
                 bevelThickness: 10,
                 bevelSize: 8,
-                bevelSegments: 5
+                bevelSegments: 5 */
             });
+            const textMaterial = new MeshBasicMaterial({
+                color: "green",
+                transparent: true,
+                depthTest: false
+            });
+            this.textMesh = new Mesh(textgGeo, textMaterial);
             // 位置
             textgGeo.computeBoundingBox();
             const box: Box3 | null = textgGeo.boundingBox;
             const length: number = box !== null ? Math.abs(box.max.x - box.min.x) : 100;
-            const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2)).premultiply(new Matrix4().makeTranslation(-length/2, 0, 450));
-            textgGeo.applyMatrix4(mat);
-            const textMaterial = new MeshBasicMaterial({
-                color: "green",
-                transparent: true
-            });
-            const mesh = new Mesh(textgGeo, textMaterial);
-            this.scene!.add(mesh);
+            const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2)).premultiply(new Matrix4().makeTranslation(-length/2, 0, 400));
+            this.textMesh.applyMatrix4(mat);
 
-            // 更新文字透明度的动画
-            const fadeIn = new TWEEN.Tween({...mesh.position, scale: 0})
-                .to({ z:350, scale: 1 }, 2000)
-                .easing(TWEEN.Easing.Linear.None);
-
-            fadeIn.onUpdate(function (obj: any) {
-                mesh.position.setZ(obj.z);
-            });
-            // 计划动画
-            fadeIn.start();
+            this.scene!.add(this.textMesh);
         });
 
         const animate = ()=>{
@@ -166,7 +158,20 @@ export class ThreeLearn{
             if(this.mixer && this.clock){
                 this.mixer.update(this.clock.getDelta());
             }
-            TWEEN.update();
+            if(this.textMesh && this.textMesh.position.z <= 800){
+                const scale: Vector3 = this.textMesh.scale;
+                const position: Vector3 = this.textMesh.position.clone();
+                //计算新的中心
+                this.textMesh.geometry.computeBoundingBox();
+                const box: Box3 | null = this.textMesh.geometry.boundingBox;
+                const length: number = box !== null ? Math.abs(box.max.x - box.min.x) * (scale.x + 0.017) : 100;
+                const mat: Matrix4 = new Matrix4().premultiply(new Matrix4().makeRotationX(Math.PI / 2))
+                    .premultiply(new Matrix4().makeTranslation(-length/2, 0, position.z + 10));
+
+                this.textMesh.applyMatrix4(new Matrix4().premultiply(this.textMesh.matrixWorld.invert())
+                    .premultiply(new Matrix4().makeScale(scale.x + 0.2, scale.y + 0.2, scale.z + 0.2)).premultiply(mat));
+                
+            }
             renderer.render(this.scene!, this.camera!);
         }
         animate();

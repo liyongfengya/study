@@ -274,10 +274,10 @@ export class ThreeLearn{
                 const cameraNewPos: Vector3 = this.wheelDownCameraPos!.clone();
                 const cameraNewDir: Vector3 = this.wheelDownCameraDir!.clone();
 
-                cameraNewPos.sub(rayIntersectPt);
+                // cameraNewPos.sub(rayIntersectPt);
                 cameraNewPos.applyQuaternion(verRotateQuaternion);
                 cameraNewPos.applyQuaternion(horRotateQuaternion);
-                cameraNewPos.add(rayIntersectPt);
+                // cameraNewPos.add(rayIntersectPt);
 
                 cameraNewDir.applyQuaternion(verRotateQuaternion);
                 cameraNewDir.applyQuaternion(horRotateQuaternion);
